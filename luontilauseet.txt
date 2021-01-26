@@ -1,0 +1,172 @@
+CREATE TABLE IF NOT EXISTS Asiakas(
+    id serial,
+    tyyppi varchar(20) NOT NULL,
+    nimi varchar(50) NOT NULL,
+    osoite varchar(100),
+    PRIMARY KEY(id)
+);
+
+
+create table IF NOT EXISTS tarvike(
+   id serial,
+   nimi varchar(50) NOT NULL,
+   yksikkö varchar(10) NOT NULL,
+   sisäänostohinta decimal(9,2) NOT NULL,
+   myyntihinta decimal(9,2),
+   varastotilanne int NOT NULL,
+   alv_prosentti decimal(4,2) NOT NULL,
+   primary key (id)
+);
+
+
+create table IF NOT EXISTS tarvike_uusi(
+   id serial,
+   nimi varchar(50) NOT NULL,
+   yksikkö varchar(10) NOT NULL,
+   sisäänostohinta decimal(9,2) NOT NULL,
+   myyntihinta decimal(9,2),
+   varastotilanne int NOT NULL,
+   alv_prosentti decimal(4,2) NOT NULL,
+   primary key (id)
+);
+
+
+create table IF NOT EXISTS tarvike_poistunut(
+   id serial,
+   nimi varchar(50) NOT NULL,
+   yksikkö varchar(10) NOT NULL,
+   sisäänostohinta decimal(9,2) NOT NULL,
+   myyntihinta decimal(9,2),
+   varastotilanne int NOT NULL,
+   alv_prosentti decimal(4,2) NOT NULL,
+   poistumispäivä date NOT NULL,
+   primary key (id)
+);
+
+
+CREATE TABLE IF NOT EXISTS Työkohde(
+    id serial,
+    asiakas_id integer,
+    nimi varchar(50),
+    osoite varchar(100),
+    PRIMARY KEY(id),
+    FOREIGN KEY(asiakas_id) REFERENCES asiakas(id)
+);
+
+
+CREATE TABLE IF NOT EXISTS Projekti(
+    id serial,
+    työkohde_id integer,
+    tyyppi varchar(20) NOT NULL,
+    nimi varchar(50) NOT NULL,
+    PRIMARY KEY(id),
+    FOREIGN KEY (työkohde_id) REFERENCES työkohde(id)
+);
+
+
+CREATE TABLE IF NOT EXISTS Lasku(
+    id serial,
+    eräpäivä date,
+    päivämäärä date NOT NULL,
+    maksupäivä date,
+    osoite varchar(100),
+    projekti_tyyppi varchar(20) NOT NULL,
+    työ_hinta_alkup decimal(10,2) NOT NULL,
+    tarvikkeet_hinta_alkup decimal(10,2) NOT NULL,
+    tunnit decimal(5,2),
+    kotitalousvähennys decimal(10,2),
+    alv_osuus decimal(10,2) NOT NULL,
+    alennus_tarvikkeet decimal(5,2),
+    alennus_tuntityö decimal(5,2),
+    työ_hinta_alennettu decimal(10,2),
+    tarvikkeet_hinta_alennettu decimal(10,2),
+    osat_lkm integer NOT NULL,
+    osat_numero integer,
+    loppusumma decimal(10,2) NOT NULL,
+    loppusumma_alennettu decimal(10,2),
+    loppusumma_alkuperäinen decimal(10,2),
+    edellinen_lasku integer,
+    lasku_tyyppi varchar(20), --lasku, muistutus, karhu
+
+
+    PRIMARY KEY(id),
+    FOREIGN KEY (edellinen_lasku) REFERENCES Lasku
+);
+
+
+create table IF NOT EXISTS työhinnasto(
+   id serial,
+   työ_nimi varchar(50) NOT NULL,
+   hinta decimal(9,2) NOT NULL,
+   primary key (id)
+);
+
+
+CREATE TABLE IF NOT EXISTS Laskutiedot(
+    projekti_id integer,
+    lasku_id integer,
+    PRIMARY KEY(projekti_id, lasku_id),
+    FOREIGN KEY(projekti_id) REFERENCES Projekti(id),
+    FOREIGN KEY(lasku_id) REFERENCES Lasku(id)
+);
+
+
+create table IF NOT EXISTS tarvikeluettelo(
+   lasku_id int,
+   tarvike_id int,
+   lukumäärä int NOT NULL,
+   alennus decimal(5,2) DEFAULT 0.0,
+   foreign key (lasku_id) references lasku(id),
+   foreign key (tarvike_id) references tarvike(id)
+);
+
+
+create table IF NOT EXISTS työluettelo(
+   lasku_id int,
+   työ_id int,
+   lukumäärä int NOT NULL,
+   alennus decimal(5,2) DEFAULT 0.0,
+   primary key (lasku_id,työ_id),
+   foreign key (lasku_id) references lasku(id),
+   foreign key (työ_id) references työhinnasto(id)
+);
+
+
+
+INSERT INTO työhinnasto(työ_nimi, hinta) 
+SELECT 'suunnittelu', 55
+WHERE NOT EXISTS (
+    SELECT 1 FROM työhinnasto WHERE työ_nimi='suunnittelu'
+);
+
+INSERT INTO työhinnasto(työ_nimi, hinta) 
+SELECT 'työ', 45
+WHERE NOT EXISTS (
+    SELECT 1 FROM työhinnasto WHERE työ_nimi='työ'
+);
+
+INSERT INTO työhinnasto(työ_nimi, hinta) 
+SELECT 'aputyö', 45
+WHERE NOT EXISTS (
+    SELECT 1 FROM työhinnasto WHERE työ_nimi='aputyö'
+);
+
+INSERT INTO tarvike(nimi, yksikkö, sisäänostohinta, myyntihinta, varastotilanne, alv_prosentti) 
+SELECT 'porakone', 'kpl', 1.00, 1.49, 2, 0.24
+WHERE NOT EXISTS (
+    SELECT 1 FROM tarvike WHERE nimi='porakone'
+);
+
+
+INSERT INTO tarvike(nimi, yksikkö, sisäänostohinta, myyntihinta, varastotilanne, alv_prosentti) 
+SELECT 'naula', 'pkt', 5.00, 7.45, 500, 0.24
+WHERE NOT EXISTS (
+    SELECT 1 FROM tarvike WHERE nimi='naula'
+);
+
+
+INSERT INTO tarvike(nimi, yksikkö, sisäänostohinta, myyntihinta, varastotilanne, alv_prosentti) 
+SELECT 'maallikon sähkö-opas', 'kpl', 10.00, 13.50, 12, 0.10
+WHERE NOT EXISTS (
+    SELECT 1 FROM tarvike WHERE nimi='maallikon sähkö-opas'
+);
